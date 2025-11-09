@@ -18,6 +18,9 @@ func TestEventTypeConstants(t *testing.T) {
 	if EventTypeSnapshot != "snapshot" {
 		t.Errorf("expected 'snapshot', got '%s'", EventTypeSnapshot)
 	}
+	if EventTypeMouse != "mouse" {
+		t.Errorf("expected 'mouse', got '%s'", EventTypeMouse)
+	}
 }
 
 func TestEventTypes(t *testing.T) {
@@ -30,6 +33,7 @@ func TestEventTypes(t *testing.T) {
 		{"output", OutputEvent{}, EventTypeOutput},
 		{"resize", ResizeEvent{}, EventTypeResize},
 		{"snapshot", SnapshotEvent{}, EventTypeSnapshot},
+		{"mouse", MouseEvent{}, EventTypeMouse},
 	}
 
 	for _, tt := range tests {
@@ -66,6 +70,30 @@ func TestCommandMarshaling(t *testing.T) {
 			name:     "takeSnapshot command",
 			cmd:      command{Type: "takeSnapshot"},
 			expected: `{"type":"takeSnapshot"}`,
+		},
+		{
+			name: "mouse click command",
+			cmd: command{
+				Type:   "mouse",
+				Event:  "click",
+				Button: "left",
+				Row:    10,
+				Col:    20,
+			},
+			expected: `{"type":"mouse","event":"click","button":"left","row":10,"col":20}`,
+		},
+		{
+			name: "mouse click with modifiers command",
+			cmd: command{
+				Type:   "mouse",
+				Event:  "click",
+				Button: "left",
+				Row:    5,
+				Col:    15,
+				Shift:  true,
+				Ctrl:   true,
+			},
+			expected: `{"type":"mouse","event":"click","button":"left","row":5,"col":15,"shift":true,"ctrl":true}`,
 		},
 	}
 
@@ -171,6 +199,32 @@ func TestParseEvent(t *testing.T) {
 				}
 				if snapshot.Text != "snapshot text" {
 					t.Errorf("expected text 'snapshot text', got %s", snapshot.Text)
+				}
+			},
+		},
+		{
+			name:      "mouse event",
+			json:      `{"type":"mouse","data":{"event":"click","button":"left","row":10,"col":20,"shift":false,"ctrl":true,"alt":false}}`,
+			eventType: EventTypeMouse,
+			checkFunc: func(t *testing.T, e Event) {
+				mouse := e.(MouseEvent)
+				if mouse.Event != "click" {
+					t.Errorf("expected event 'click', got %s", mouse.Event)
+				}
+				if mouse.Button != "left" {
+					t.Errorf("expected button 'left', got %s", mouse.Button)
+				}
+				if mouse.Row != 10 {
+					t.Errorf("expected row 10, got %d", mouse.Row)
+				}
+				if mouse.Col != 20 {
+					t.Errorf("expected col 20, got %d", mouse.Col)
+				}
+				if mouse.Ctrl != true {
+					t.Errorf("expected ctrl true, got %v", mouse.Ctrl)
+				}
+				if mouse.Shift != false {
+					t.Errorf("expected shift false, got %v", mouse.Shift)
 				}
 			},
 		},

@@ -127,7 +127,7 @@ func (vt *VirtualTerminal) buildArgs() []string {
 	args = append(args, "--size", size)
 
 	// Add subscription to all events
-	args = append(args, "--subscribe", "init,output,resize,snapshot")
+	args = append(args, "--subscribe", "init,output,resize,snapshot,mouse")
 
 	// Add binary and its arguments
 	args = append(args, vt.config.Binary)
@@ -265,6 +265,30 @@ func (vt *VirtualTerminal) parseEvent(line string) (Event, error) {
 			Time: now,
 		}, nil
 
+	case "mouse":
+		var data struct {
+			Event  string `json:"event"`
+			Button string `json:"button"`
+			Row    int    `json:"row"`
+			Col    int    `json:"col"`
+			Shift  bool   `json:"shift"`
+			Ctrl   bool   `json:"ctrl"`
+			Alt    bool   `json:"alt"`
+		}
+		if err := json.Unmarshal(raw.Data, &data); err != nil {
+			return nil, err
+		}
+		return MouseEvent{
+			Event:  data.Event,
+			Button: data.Button,
+			Row:    data.Row,
+			Col:    data.Col,
+			Shift:  data.Shift,
+			Ctrl:   data.Ctrl,
+			Alt:    data.Alt,
+			Time:   now,
+		}, nil
+
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrInvalidEvent, raw.Type)
 	}
@@ -329,6 +353,129 @@ func (vt *VirtualTerminal) Resize(ctx context.Context, cols, rows int) error {
 func (vt *VirtualTerminal) TakeSnapshot(ctx context.Context) error {
 	cmd := command{
 		Type: "takeSnapshot",
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseClick sends a mouse click event to the terminal.
+// button can be: "left", "right", "middle", "wheel_up", "wheel_down"
+// row and col are 1-based coordinates (top-left is 1,1)
+func (vt *VirtualTerminal) MouseClick(ctx context.Context, button string, row, col int) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "click",
+		Button: button,
+		Row:    row,
+		Col:    col,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MousePress sends a mouse button press event to the terminal.
+func (vt *VirtualTerminal) MousePress(ctx context.Context, button string, row, col int) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "press",
+		Button: button,
+		Row:    row,
+		Col:    col,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseRelease sends a mouse button release event to the terminal.
+func (vt *VirtualTerminal) MouseRelease(ctx context.Context, button string, row, col int) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "release",
+		Button: button,
+		Row:    row,
+		Col:    col,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseDrag sends a mouse drag event to the terminal.
+func (vt *VirtualTerminal) MouseDrag(ctx context.Context, button string, row, col int) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "drag",
+		Button: button,
+		Row:    row,
+		Col:    col,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseScroll sends a mouse scroll event to the terminal.
+// button should be "wheel_up" or "wheel_down"
+func (vt *VirtualTerminal) MouseScroll(ctx context.Context, button string, row, col int) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "click",
+		Button: button,
+		Row:    row,
+		Col:    col,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseClickWithModifiers sends a mouse click event with modifier keys.
+func (vt *VirtualTerminal) MouseClickWithModifiers(ctx context.Context, button string, row, col int, modifiers MouseModifiers) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "click",
+		Button: button,
+		Row:    row,
+		Col:    col,
+		Shift:  modifiers.Shift,
+		Ctrl:   modifiers.Ctrl,
+		Alt:    modifiers.Alt,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MousePressWithModifiers sends a mouse press event with modifier keys.
+func (vt *VirtualTerminal) MousePressWithModifiers(ctx context.Context, button string, row, col int, modifiers MouseModifiers) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "press",
+		Button: button,
+		Row:    row,
+		Col:    col,
+		Shift:  modifiers.Shift,
+		Ctrl:   modifiers.Ctrl,
+		Alt:    modifiers.Alt,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseReleaseWithModifiers sends a mouse release event with modifier keys.
+func (vt *VirtualTerminal) MouseReleaseWithModifiers(ctx context.Context, button string, row, col int, modifiers MouseModifiers) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "release",
+		Button: button,
+		Row:    row,
+		Col:    col,
+		Shift:  modifiers.Shift,
+		Ctrl:   modifiers.Ctrl,
+		Alt:    modifiers.Alt,
+	}
+	return vt.sendCommand(cmd)
+}
+
+// MouseDragWithModifiers sends a mouse drag event with modifier keys.
+func (vt *VirtualTerminal) MouseDragWithModifiers(ctx context.Context, button string, row, col int, modifiers MouseModifiers) error {
+	cmd := command{
+		Type:   "mouse",
+		Event:  "drag",
+		Button: button,
+		Row:    row,
+		Col:    col,
+		Shift:  modifiers.Shift,
+		Ctrl:   modifiers.Ctrl,
+		Alt:    modifiers.Alt,
 	}
 	return vt.sendCommand(cmd)
 }
