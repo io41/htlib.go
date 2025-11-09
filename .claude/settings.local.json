@@ -11,7 +11,12 @@
       "Bash(timeout 3 go run:*)",
       "Bash(tree:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo view:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

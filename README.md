@@ -24,7 +24,7 @@ cargo install --git https://github.com/andyk/ht
 Then install the Go library:
 
 ```bash
-go get github.com/andyk/htlib.go
+go get github.com/io41/htlib.go
 ```
 
 ## Quick Start
@@ -37,7 +37,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/andyk/htlib.go"
+    "github.com/io41/htlib.go"
 )
 
 func main() {

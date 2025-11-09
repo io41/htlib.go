@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/andyk/htlib.go"
+	"github.com/io41/htlib.go"
 )
 
 func main() {
