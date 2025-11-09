@@ -1,13 +1,14 @@
 # htlib.go
 
-A comprehensive Go library for programmatic terminal control using [ht](https://github.com/andyk/ht) (Headless Terminal). This library provides both synchronous and asynchronous APIs for interacting with terminal applications, making it ideal for CLI automation, testing, and AI agent integration.
+A comprehensive Go library for programmatic terminal control using [ht](https://github.com/io41/ht) (Headless Terminal). This library provides both synchronous and asynchronous APIs for interacting with terminal applications, making it ideal for CLI automation, testing, and AI agent integration.
 
 ## Features
 
 - 🚀 **Dual API Design**: Both synchronous (blocking) and asynchronous (channel-based) APIs
-- 🔄 **Event Streaming**: Subscribe to terminal events (init, output, resize, snapshot)
+- 🔄 **Event Streaming**: Subscribe to terminal events (init, output, resize, snapshot, mouse)
 - 🎯 **Context Support**: Full `context.Context` support for cancellation and timeouts
 - ⌨️  **Rich Key Support**: Comprehensive key mapping including function keys, modifiers, and special keys
+- 🖱️  **Mouse Support**: Full mouse interaction support (click, press, release, drag, scroll)
 - 📸 **Snapshots**: Capture terminal state as text or raw VT100 sequences
 - 🧪 **Testing Ready**: Perfect for CLI application testing and automation
 - 🤖 **AI-Friendly**: Originally designed to make terminals accessible to LLMs
@@ -18,7 +19,7 @@ A comprehensive Go library for programmatic terminal control using [ht](https://
 First, install the `ht` binary:
 
 ```bash
-cargo install --git https://github.com/andyk/ht
+cargo install --git https://github.com/io41/ht
 ```
 
 Then install the Go library:
@@ -164,6 +165,31 @@ vt.SendKeys(ctx,
 )
 ```
 
+### Mouse Helpers
+
+```go
+// Mouse clicks
+vt.MouseClick(ctx, "left", 10, 25)          // Left click at row 10, col 25
+vt.MouseClick(ctx, "right", 5, 10)          // Right click
+vt.MouseClick(ctx, "middle", 15, 30)        // Middle click
+
+// Mouse button operations
+vt.MousePress(ctx, "left", 5, 10)           // Press and hold
+vt.MouseDrag(ctx, "left", 6, 11)            // Drag to new position
+vt.MouseRelease(ctx, "left", 6, 11)         // Release button
+
+// Mouse wheel
+vt.MouseScroll(ctx, "wheel_up", 10, 20)     // Scroll up
+vt.MouseScroll(ctx, "wheel_down", 10, 20)   // Scroll down
+
+// Mouse with modifiers
+vt.MouseClickWithModifiers(ctx, "left", 10, 25, htlib.MouseModifiers{
+    Shift: true,
+    Ctrl:  true,
+    Alt:   false,
+})
+```
+
 ## Event Types
 
 ### InitEvent
@@ -214,6 +240,22 @@ type SnapshotEvent struct {
 }
 ```
 
+### MouseEvent
+Emitted when mouse events occur in the terminal (requires application support).
+
+```go
+type MouseEvent struct {
+    Event   string    // "click", "press", "release", "drag"
+    Button  string    // "left", "right", "middle", "wheel_up", "wheel_down"
+    Row     int       // 1-based row coordinate
+    Col     int       // 1-based column coordinate
+    Shift   bool      // Shift modifier
+    Ctrl    bool      // Control modifier
+    Alt     bool      // Alt modifier
+    Time    time.Time
+}
+```
+
 ## Examples
 
 The `examples/` directory contains complete working examples:
@@ -223,6 +265,7 @@ The `examples/` directory contains complete working examples:
 - **[vim_automation.go](examples/vim_automation.go)**: Automate nano/vim editor
 - **[event_streaming.go](examples/event_streaming.go)**: Multiple event subscribers and monitoring
 - **[cli_testing.go](examples/cli_testing.go)**: CLI testing framework example
+- **[mouse_demo.go](examples/mouse_demo.go)**: Mouse interaction with TUI applications
 
 Run examples:
 
@@ -233,6 +276,7 @@ go run interactive.go
 go run vim_automation.go
 go run event_streaming.go
 go run cli_testing.go
+go run mouse_demo.go
 ```
 
 ## Testing
@@ -309,6 +353,46 @@ go func() {
 for _, event := range recording {
     fmt.Printf("%s: %T\n", event.Time(), event)
 }
+```
+
+### Mouse Interaction Automation
+
+```go
+// Interact with TUI applications that support mouse input
+// Note: The application must enable mouse tracking for this to work
+
+// Click on a menu item
+vt.MouseClick(ctx, "left", 5, 20)
+time.Sleep(100 * time.Millisecond)
+
+// Select text by dragging
+vt.MousePress(ctx, "left", 10, 15)
+vt.MouseDrag(ctx, "left", 10, 25)
+vt.MouseRelease(ctx, "left", 10, 25)
+
+// Right-click for context menu
+vt.MouseClick(ctx, "right", 15, 30)
+
+// Scroll through content
+vt.MouseScroll(ctx, "wheel_down", 20, 40)
+vt.MouseScroll(ctx, "wheel_up", 20, 40)
+
+// Use modifiers for special actions
+vt.MouseClickWithModifiers(ctx, "left", 8, 12, htlib.MouseModifiers{
+    Ctrl: true, // Ctrl+Click
+})
+
+// Listen for mouse events from the terminal
+subscriber := vt.Subscribe()
+go func() {
+    for event := range subscriber {
+        if mouseEvent, ok := event.(htlib.MouseEvent); ok {
+            fmt.Printf("Mouse %s: %s at (%d,%d)\n",
+                mouseEvent.Event, mouseEvent.Button,
+                mouseEvent.Row, mouseEvent.Col)
+        }
+    }
+}()
 ```
 
 ## Context and Cancellation
@@ -431,7 +515,8 @@ Apache 2.0 - See LICENSE file for details.
 
 ## Related Projects
 
-- [ht](https://github.com/andyk/ht) - The underlying headless terminal (Rust)
+- [ht](https://github.com/io41/ht) - The underlying headless terminal with mouse support (Rust)
+- [ht (original)](https://github.com/andyk/ht) - Original headless terminal by @andyk
 - [htlib.py](https://github.com/andyk/headlong/blob/main/packages/env/htlib.py) - Python wrapper
 - [htlib.ts](https://github.com/andyk/headlong/blob/main/packages/env/htlib.ts) - TypeScript wrapper
 
@@ -439,9 +524,10 @@ Apache 2.0 - See LICENSE file for details.
 
 - Created for the [ht](https://github.com/andyk/ht) project by [@andyk](https://github.com/andyk)
 - Go implementation with full sync/async support and context integration
+- Mouse support enabled by [io41/ht](https://github.com/io41/ht) fork
 
 ## Support
 
-- Report issues: [GitHub Issues](https://github.com/andyk/htlib.go/issues)
-- Discussions: [GitHub Discussions](https://github.com/andyk/htlib.go/discussions)
-- ht documentation: [ht README](https://github.com/andyk/ht#readme)
+- Report issues: [GitHub Issues](https://github.com/io41/htlib.go/issues)
+- Discussions: [GitHub Discussions](https://github.com/io41/htlib.go/discussions)
+- ht documentation: [ht README](https://github.com/io41/ht#readme)

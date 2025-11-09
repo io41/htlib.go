@@ -48,6 +48,8 @@ const (
 	EventTypeResize EventType = "resize"
 	// EventTypeSnapshot is emitted in response to takeSnapshot command
 	EventTypeSnapshot EventType = "snapshot"
+	// EventTypeMouse is emitted when mouse events occur
+	EventTypeMouse EventType = "mouse"
 )
 
 // Event represents an event received from the ht process.
@@ -95,6 +97,29 @@ type SnapshotEvent struct {
 
 func (e SnapshotEvent) Type() EventType { return EventTypeSnapshot }
 
+// MouseEvent is emitted when mouse events occur in the terminal.
+// Note: The application running in the terminal must enable mouse tracking
+// for these events to be emitted.
+type MouseEvent struct {
+	Event  string `json:"event"`  // "click", "press", "release", "drag"
+	Button string `json:"button"` // "left", "right", "middle", "wheel_up", "wheel_down"
+	Row    int    `json:"row"`    // 1-based row coordinate
+	Col    int    `json:"col"`    // 1-based column coordinate
+	Shift  bool   `json:"shift"`  // Shift modifier key pressed
+	Ctrl   bool   `json:"ctrl"`   // Control modifier key pressed
+	Alt    bool   `json:"alt"`    // Alt modifier key pressed
+	Time   time.Time
+}
+
+func (e MouseEvent) Type() EventType { return EventTypeMouse }
+
+// MouseModifiers represents modifier keys for mouse events.
+type MouseModifiers struct {
+	Shift bool
+	Ctrl  bool
+	Alt   bool
+}
+
 // rawEvent is used for unmarshaling JSON events from ht.
 type rawEvent struct {
 	Type string          `json:"type"`
@@ -108,4 +133,11 @@ type command struct {
 	Keys    []string    `json:"keys,omitempty"`
 	Cols    int         `json:"cols,omitempty"`
 	Rows    int         `json:"rows,omitempty"`
+	Event   string      `json:"event,omitempty"`
+	Button  string      `json:"button,omitempty"`
+	Row     int         `json:"row,omitempty"`
+	Col     int         `json:"col,omitempty"`
+	Shift   bool        `json:"shift,omitempty"`
+	Ctrl    bool        `json:"ctrl,omitempty"`
+	Alt     bool        `json:"alt,omitempty"`
 }
